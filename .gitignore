@@ -1,0 +1,8 @@
+.zed/
+.venv/
+build/
+dist/
+src/__pycache__/
+src/dsd_grading/__pycache__/
+main.spec
+.python-version

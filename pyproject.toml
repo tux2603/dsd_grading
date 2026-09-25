@@ -1,0 +1,20 @@
+[project]
+name = "dsd-grading"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Owen O'Connor", email = "tux2603@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "flet[all]>=1.0.1",
+    "pyinstaller>=6.22.3",
+]
+
+[project.scripts]
+dsd-grading = "dsd_grading:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
