@@ -4,6 +4,7 @@ import flet as ft
 
 from grader import Grader
 from main import main as main_ui
+from qar_submission import QARSubmission
 
 __all__ = ["Grader"]
 
