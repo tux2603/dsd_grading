@@ -1,6 +1,15 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14"
+
+[[package]]
+name = "aiomultiprocess"
+version = "0.9.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/02/d4/1e69e17dda5df91734b70d03dbbf9f222ddb438e1f3bf4ea8fa135ce46de/aiomultiprocess-0.9.1.tar.gz", hash = "sha256:f0231dbe0291e15325d7896ebeae0002d95a4f2675426ca05eb35f24c60e495b", size = 24514, upload-time = "2024-04-23T08:26:04.223Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ad/14/c48c2f5c96960f5649a72b96a0a31d45384b37d89a63f7ccea76bf4fceba/aiomultiprocess-0.9.1-py3-none-any.whl", hash = "sha256:3a7b3bb3c38dbfb4d9d1194ece5934b6d32cf0280e8edbe64a7d215bba1322c6", size = 17517, upload-time = "2024-04-23T08:26:01.649Z" },
+]
 
 [[package]]
 name = "altgraph"
@@ -221,6 +230,7 @@ name = "dsd-grading"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "aiomultiprocess" },
     { name = "flet", extra = ["all"] },
     { name = "lark" },
     { name = "platformdirs" },
@@ -229,6 +239,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiomultiprocess", specifier = ">=0.9.1" },
     { name = "flet", extras = ["all"], specifier = ">=1.0.1" },
     { name = "lark", specifier = ">=1.3.1" },
     { name = "platformdirs", specifier = ">=4.11.14" },

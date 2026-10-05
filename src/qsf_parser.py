@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from io import TextIOWrapper
 from pathlib import Path
 
 import lark
@@ -19,8 +18,8 @@ class QSFParser:
         self.parser = lark.Lark(grammar, propagate_positions=True)
         self.global_assignments: list[GlobalAssignment] = []
 
-    def parse(self, qsf_file: TextIOWrapper) -> None:
-        tree = self.parser.parse(qsf_file.read())
+    def parse(self, qsf_str: str) -> None:
+        tree = self.parser.parse(qsf_str)
 
         self.global_assignments: list[GlobalAssignment] = []
 

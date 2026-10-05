@@ -17,6 +17,9 @@ class AppData:
 
     @property
     def working_dir(self) -> str:
+        if not os.path.exists(self.app_dir):
+            os.makedirs(self.app_dir)
+
         if self._working_dir is None:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')  # noqa: DTZ005
             self._working_dir = tempfile.mkdtemp(dir=self.app_dir, prefix=f'dsd_grading_{timestamp}_')
@@ -32,7 +35,7 @@ class AppData:
                 # Check some default paths
                 # TODO: make this a little bit more robust
                 default_paths = [
-                    r'E:\altera_lite\25.1std\quartus\bin64',
+                    r'E:\altera_lite25.1std\quartus\bin64',
                     r'C:\altera_lite\25.1std\quartus\bin64',
                     r'/opt/intelFPGA_lite/25.1std/quartus/bin',
                     r'/opt/intelFPGA/25.1std/quartus/bin',

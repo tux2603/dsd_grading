@@ -1,9 +1,11 @@
+import asyncio
 import os
 import re
 import shutil
 import subprocess
 from dataclasses import dataclass, field
 
+import anyio
 import flet as ft
 
 from app_data import AppData
@@ -26,12 +28,14 @@ class QARSubmissionData:
     _student_name: str|None = field(init=False, default=None)
     _submission_name: str|None = field(init=False, default=None)
     _sim_dir: str|None = field(init=False, default=None)
+    _makefile_prepared: bool = field(init=False, default=False)
 
     source_files: list[str] = field(default_factory=list, init=False)
     output_files: list[str] = field(default_factory=list, init=False)
     selected_file: str|None = field(default=None, init=False)
     selected_file_contents: str = field(default='', init=False)
 
+    # TODO: add support for gold stars
     rubric_scores: list[RubricItemScore] = field(default_factory=list, init=False)
 
     @property
@@ -76,8 +80,36 @@ class QARSubmissionData:
 
             self.selected_file_contents = f'Contents of {self.selected_file}:\n~~~{language}\n{file_content}\n~~~'
 
+    def upload_bitstream_event(self, e: ft.Event[ft.Button], page: ft.Page) -> None:
+        if not self._extracted:
+            raise ValueError('QAR submission has not been extracted yet. Cannot upload bitstream.')
+        if not self._makefile_prepared:
+            raise ValueError('Makefile has not been prepared yet. Cannot upload bitstream.')
 
-    def extract(self) -> None:
+        # Spawn the make process
+        make_process = subprocess.run(
+            ['make', 'upload'],
+            cwd=self._extracted_dir,
+            text=True,
+            check=False
+        )
+
+        if make_process.returncode != 0:
+            page.show_dialog(ft.SnackBar(
+                ft.Text(f'Failed to upload bitstream for {self.student_name}'),
+                open=True,
+                duration=2000,
+                bgcolor=ft.Colors.RED_100
+            ))
+        else:
+            page.show_dialog(ft.SnackBar(
+                ft.Text(f'Successfully uploaded bitstream for {self.student_name}'),
+                open=True,
+                duration=2000,
+                bgcolor=ft.Colors.GREEN_100
+            ))
+
+    async def extract(self):
         if self._extracted:
             raise ValueError('QAR submission has already been extracted.')
 
@@ -85,17 +117,16 @@ class QARSubmissionData:
         extract_path = os.path.join(self.app_data.working_dir, f'{self.student_name}_{self.submission_name}_extracted')
         qar_path = os.path.join(self.app_data.working_dir, self.qar_file)
 
-        # Run the quartus_sh command to extract the QAR file
-        result = subprocess.run(
-            [qsh_path, '--restore', '-output', extract_path, qar_path],
-            check=False,
-            capture_output=True,
-            text=True
+        process = await asyncio.create_subprocess_exec(
+            qsh_path, '--restore', '-output', extract_path, qar_path,
         )
 
+        return_code = await process.wait()
+        _, stderr = await process.communicate()
+
         # Check to see that the command exitied successfully
-        if result.returncode != 0:
-            raise RuntimeError(f'Failed to extract QAR file {self.qar_file}. Error: {result.stderr}')
+        if return_code != 0:
+            raise RuntimeError(f'Failed to extract QAR file {self.qar_file}. Error: {stderr}')
 
         # Copy in the testbench files if they are provided
         sim_path = os.path.join(extract_path, 'sim')
@@ -107,9 +138,9 @@ class QARSubmissionData:
         self._extracted = True
         print(f'extracted {self.student_name}')
 
-    def prepare_make_file(self, testbenches: list[TestbenchData]) -> None:
+    async def prepare_make_file(self, testbenches: list[TestbenchData]) -> None:
         if not self._extracted or self._sim_dir is None:
-            self.extract()
+            await self.extract()
 
         # Parse the QSF file to find the synthesis and simulation files
         qsf_files = [f for f in os.listdir(self._extracted_dir) if f.endswith('.qsf')]
@@ -122,8 +153,12 @@ class QARSubmissionData:
         qsf_file_path = os.path.join(self._extracted_dir, qsf_files[0])  # ty: ignore[no-matching-overload]
 
         qsf_parser = QSFParser()
-        with open(qsf_file_path, 'r') as qsf_file:
-            qsf_parser.parse(qsf_file)
+
+        # with open(qsf_file_path, 'r') as qsf_file:
+        #     qsf_parser.parse(qsf_file)
+        async with await anyio.open_file(qsf_file_path, 'r') as qsf_file:
+            contents = await qsf_file.read()
+            qsf_parser.parse(contents)
 
         # Extract the file information from the QSF parser
         vhdl_files = qsf_parser.vhdl_files
@@ -209,10 +244,12 @@ class QARSubmissionData:
 
         # Write the makefile to the extracted directory
         makefile_path = os.path.join(self._extracted_dir, 'Makefile') # ty: ignore[no-matching-overload]
-        with open(makefile_path, 'w') as makefile_file:
-            makefile.write(makefile_file)
+        async with await anyio.open_file(makefile_path, 'w') as makefile_file:
+            await makefile_file.write(str(makefile))
 
         print(f'Prepared makefile for student {self.student_name} in directory {self._extracted_dir}.')
+
+        self._makefile_prepared = True
 
     def _parse_qar_file_name(self) -> tuple[str, str]:
         match = re.match(r'^(\w+)_\d+_\d+_(.+?)\.qar$', self.qar_file)
