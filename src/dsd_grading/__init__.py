@@ -7,7 +7,6 @@ from app_data import AppData
 from grader_data import GraderData
 from ui import main as main_ui
 
-__all__ = ["Grader", "QARSubmission"]
 
 def main() -> None:
     print("Starting the DSD Grader!")
