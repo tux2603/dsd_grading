@@ -1,0 +1,31 @@
+start: (line? _NEWLINE)* line _NEWLINE?
+
+?line : SH_COMMENT | global_assignment | instance_assignment | location_assignment
+
+global_assignment: "set_global_assignment"\
+    _WS "-name" _WS NAME _WS VALUE \
+    (_WS "-section_id" _WS SECTION)? \
+    _SLOP?
+
+instance_assignment: "set_instance_assignment" \
+    _WS "-name" _WS NAME _WS VALUE \
+    _WS "-to" _WS VALUE \
+    (_WS "-section_id" _WS SECTION)? \
+    _SLOP?
+
+location_assignment: "set_location_assignment" \
+    _WS PIN _WS "-to" _WS PORT \
+
+VALUE: "\"" /[^"]+/ "\"" | /[^\s"']+/
+NAME: CNAME
+SECTION: CNAME
+PIN: "PIN_" /[A-Z]+[0-9]+/
+PORT: CNAME /\[[0-9]+\]/?
+
+_SLOP: /[^\n\r]+/
+_NEWLINE: (/\r?\n/)+
+_WS: (" "|/\t/)+
+
+%import common.SH_COMMENT
+%import common.CNAME
+%import common.ESCAPED_STRING
