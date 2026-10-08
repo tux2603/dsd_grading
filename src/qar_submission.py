@@ -2,7 +2,6 @@ import asyncio
 import os
 import re
 import shutil
-import subprocess
 from dataclasses import dataclass, field
 
 import anyio
@@ -80,30 +79,37 @@ class QARSubmissionData:
 
             self.selected_file_contents = f'Contents of {self.selected_file}:\n~~~{language}\n{file_content}\n~~~'
 
-    def upload_bitstream_event(self, e: ft.Event[ft.Button], page: ft.Page) -> None:
+    async def upload_bitstream_event(self, e: ft.Event[ft.Button], page: ft.Page) -> None:
         if not self._extracted:
             raise ValueError('QAR submission has not been extracted yet. Cannot upload bitstream.')
         if not self._makefile_prepared:
             raise ValueError('Makefile has not been prepared yet. Cannot upload bitstream.')
 
         # Spawn the make process
-        make_process = subprocess.run(
-            ['make', 'upload'],
-            cwd=self._extracted_dir,
-            text=True,
-            check=False
+        # make_process = subprocess.run(
+        #     ['make', 'upload'],
+        #     cwd=self._extracted_dir,
+        #     text=True,
+        #     check=False
+        # )
+
+        process = await asyncio.create_subprocess_exec(
+            'make', 'upload',
+            cwd=self._extracted_dir
         )
 
-        if make_process.returncode != 0:
+        return_code = await process.wait()
+
+        if return_code != 0:
             page.show_dialog(ft.SnackBar(
-                ft.Text(f'Failed to upload bitstream for {self.student_name}'),
+                ft.Text('Failed to upload bitstream'),
                 open=True,
                 duration=2000,
                 bgcolor=ft.Colors.RED_100
             ))
         else:
             page.show_dialog(ft.SnackBar(
-                ft.Text(f'Successfully uploaded bitstream for {self.student_name}'),
+                ft.Text('Successfully uploaded bitstream'),
                 open=True,
                 duration=2000,
                 bgcolor=ft.Colors.GREEN_100

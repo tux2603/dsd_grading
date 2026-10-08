@@ -17,6 +17,8 @@ class RubricItemScore:
     rubric_item: RubricItem
     points_off: int = field(default=0, init=False)
     feedback: str = field(default='', init=False)
+    manual_feedback_needed: bool = field(default=False, init=False)
+    gold_star: bool = field(default=False, init=False)
 
     # After init, set points off to the max if the rubric item is a bonus
     def __post_init__(self) -> None:

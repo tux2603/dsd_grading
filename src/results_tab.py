@@ -32,7 +32,7 @@ def SubmissionListTile(submission: QARSubmissionData, page: ft.Page) -> ft.ListT
         elif score.score > 0:
                 feedback_strs.append(f'{score.rubric_item.description} (+{score.score} bonus point{'s' if score.score != 1 else ''} awarded)')
 
-    feedback_str = '\n'.join(feedback_strs) if feedback_strs else 'No feedback provided.'
+    feedback_str = '\n\n'.join(feedback_strs) if feedback_strs else 'No feedback provided.'
     copy_feedback = partial(_copy_feedback_to_clipboard, feedback=feedback_str, page=page)
 
     return ft.ListTile(
